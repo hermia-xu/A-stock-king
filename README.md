@@ -21,13 +21,19 @@ npm run preview
 
 `preview` 使用生产模式启动，避免 Next.js 开发态对预览 iframe 的跨站拦截。日常开发也可用 `npm run dev`。
 
-## GitHub Pages
+## 部署到 hermia-xu/A-stock-king
 
-仓库已包含 `.github/workflows/deploy-pages.yml`。把代码推到 `main` 后：
+本仓库已包含 GitHub Actions（`.github/workflows/deploy-pages.yml`）。在你自己的电脑上：
 
-1. 打开仓库 Settings → Pages
-2. Source 选 **GitHub Actions**
-3. 等待 Actions 跑完即可访问上面的在线地址
+```bash
+git remote add github https://github.com/hermia-xu/A-stock-king.git
+# 若已有 github 远程则跳过上一行
+git push -u github main
+```
+
+然后打开 https://github.com/hermia-xu/A-stock-king/settings/pages ，Source 选 **GitHub Actions**，等 Actions 跑完后访问：
+
+https://hermia-xu.github.io/A-stock-king/
 
 本地检查静态构建：
 
@@ -36,3 +42,4 @@ npm run build:pages
 ```
 
 产物在 `out/`。
+
