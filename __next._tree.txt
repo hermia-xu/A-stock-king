@@ -1,0 +1,5 @@
+:HL["/A-stock-king/_next/static/chunks/3qwo-yokfrcmh.css","style"]
+:HL["/A-stock-king/_next/static/chunks/0yt6a6uf0ob-h.css","style"]
+:HL["/A-stock-king/_next/static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/A-stock-king/_next/static/media/feb57b2dc8f29018-s.p.3qy4m29-cg3o4.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}},"staleTime":300,"buildId":"ph_yyesOzhDbYi9BZqpFi"}
