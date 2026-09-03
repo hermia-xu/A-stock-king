@@ -134,9 +134,9 @@ type EastMoneyPayload = {
 const ASHARE_FS =
   "m:0+t:6+f:!2,m:0+t:13+f:!2,m:0+t:80+f:!2,m:1+t:2+f:!2,m:1+t:23+f:!2";
 
-const HOSTS = [
-  "https://82.push2.eastmoney.com",
+const REMOTE_HOSTS = [
   "https://push2delay.eastmoney.com",
+  "https://82.push2.eastmoney.com",
   "https://88.push2.eastmoney.com",
   "https://push2.eastmoney.com",
 ];
@@ -181,41 +181,107 @@ function formatQuoteTime(unixSeconds: number | null): string | null {
   }).format(date);
 }
 
+function buildClistUrl(host: string, period: Period, limit: number): string {
+  const fields = PERIOD_FIELDS[period];
+  const base = host.replace(/\/$/, "");
+  const path = `${base}/api/qt/clist/get`;
+  const params = new URLSearchParams({
+    fid: fields.fid,
+    po: "1",
+    pz: String(limit),
+    pn: "1",
+    np: "1",
+    fltt: "2",
+    invt: "2",
+    ut: "fa5fd1943c7b386f172d6893dbfba10b",
+    fs: ASHARE_FS,
+    fields: COMMON_FIELDS,
+    _: String(Date.now()),
+  });
+  return `${path}?${params.toString()}`;
+}
+
+function getHosts(): string[] {
+  return REMOTE_HOSTS;
+}
+
+function fetchJsonp(url: string, timeoutMs = 12_000): Promise<EastMoneyPayload> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      reject(new Error("JSONP 仅可在浏览器使用"));
+      return;
+    }
+
+    const callbackName = `__emFundFlow_${Date.now()}_${Math.floor(Math.random() * 1e6)}`;
+    const script = document.createElement("script");
+    const timer = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("JSONP 超时"));
+    }, timeoutMs);
+
+    const cleanup = () => {
+      window.clearTimeout(timer);
+      script.remove();
+      try {
+        delete (window as unknown as Record<string, unknown>)[callbackName];
+      } catch {
+        (window as unknown as Record<string, unknown>)[callbackName] = undefined;
+      }
+    };
+
+    (window as unknown as Record<string, unknown>)[callbackName] = (
+      data: EastMoneyPayload,
+    ) => {
+      cleanup();
+      resolve(data);
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("JSONP 加载失败"));
+    };
+
+    const joiner = url.includes("?") ? "&" : "?";
+    script.src = `${url}${joiner}cb=${callbackName}`;
+    document.body.appendChild(script);
+  });
+}
+
 async function fetchFromHost(
   host: string,
   period: Period,
   limit: number,
 ): Promise<EastMoneyPayload> {
-  const fields = PERIOD_FIELDS[period];
-  const url = new URL("/api/qt/clist/get", host);
-  url.searchParams.set("fid", fields.fid);
-  url.searchParams.set("po", "1");
-  url.searchParams.set("pz", String(limit));
-  url.searchParams.set("pn", "1");
-  url.searchParams.set("np", "1");
-  url.searchParams.set("fltt", "2");
-  url.searchParams.set("invt", "2");
-  url.searchParams.set("ut", "fa5fd1943c7b386f172d6893dbfba10b");
-  url.searchParams.set("fs", ASHARE_FS);
-  url.searchParams.set("fields", COMMON_FIELDS);
-  url.searchParams.set("_", String(Date.now()));
+  const requestUrl = buildClistUrl(host, period, limit);
+  const isBrowser = typeof window !== "undefined";
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-      Referer: "https://data.eastmoney.com/zjlx/detail.html",
-      Accept: "application/json, text/plain, */*",
-    },
-    cache: "no-store",
-    signal: AbortSignal.timeout(12_000),
-  });
+  try {
+    const response = await fetch(requestUrl, {
+      ...(isBrowser
+        ? {}
+        : {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+              Referer: "https://data.eastmoney.com/zjlx/detail.html",
+              Accept: "application/json, text/plain, */*",
+            },
+          }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(12_000),
+    });
 
-  if (!response.ok) {
-    throw new Error(`${host} 返回 ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`${host} 返回 ${response.status}`);
+    }
+
+    return (await response.json()) as EastMoneyPayload;
+  } catch (error) {
+    if (isBrowser && host.startsWith("http")) {
+      return fetchJsonp(requestUrl);
+    }
+    throw error;
   }
-
-  return (await response.json()) as EastMoneyPayload;
 }
 
 export function isPeriod(value: string | null | undefined): value is Period {
@@ -229,7 +295,7 @@ export async function getFundFlowRank(
   const fields = PERIOD_FIELDS[period];
   let lastError: unknown;
 
-  for (const host of HOSTS) {
+  for (const host of getHosts()) {
     try {
       const payload = await fetchFromHost(host, period, limit);
       const diff = payload.data?.diff;

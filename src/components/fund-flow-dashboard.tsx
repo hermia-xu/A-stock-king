@@ -19,6 +19,7 @@ import {
   PERIOD_CHANGE_LABEL,
   PERIOD_LABEL,
   PERIODS,
+  getFundFlowRank,
   type FundFlowResponse,
   type FundFlowRow,
   type Period,
@@ -56,19 +57,30 @@ export function FundFlowDashboard({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/fund-flow?period=${nextPeriod}`, {
-        cache: "no-store",
-      });
-      const payload = (await response.json()) as
-        | FundFlowResponse
-        | { error?: string };
-      if (!response.ok || !("rows" in payload)) {
-        const message =
-          "error" in payload && payload.error
-            ? payload.error
-            : "刷新排行失败";
-        throw new Error(message);
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+      let payload: FundFlowResponse | null = null;
+
+      try {
+        const response = await fetch(
+          `${basePath}/api/fund-flow?period=${nextPeriod}`,
+          { cache: "no-store" },
+        );
+        if (response.ok) {
+          const body = (await response.json()) as
+            | FundFlowResponse
+            | { error?: string };
+          if ("rows" in body) {
+            payload = body;
+          }
+        }
+      } catch {
+        // Fall through to direct East Money fetch (GitHub Pages / offline API).
       }
+
+      if (!payload) {
+        payload = await getFundFlowRank(nextPeriod, 10);
+      }
+
       setCache((prev) => ({ ...prev, [nextPeriod]: payload }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "刷新排行失败");

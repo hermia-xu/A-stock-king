@@ -1,21 +1,38 @@
 # A 股资金净流入排行
 
-查看沪深 A 股（含创业板、科创板）主力资金净流入最多的十只股票。默认打开**近三个交易日**排行，也可切换今日、近五日、近十日。
+沪深 A 股（含创业板、科创板）主力资金净流入前十。默认近三个交易日，可切换今日 / 近五日 / 近十日。
 
-数据来自东方财富个股资金流向公开接口。主力净流入 = 超大单净额 + 大单净额。
+数据来自东方财富公开接口。主力净流入 = 超大单 + 大单。仅供浏览，非投资建议。
+
+## 在线地址
+
+部署到 GitHub Pages 后打开：
+
+https://hermia-xu.github.io/A-stock-king/
 
 ## 本地运行
 
 ```bash
 npm install
-npm run dev
+npm run preview
 ```
 
-默认在 [http://127.0.0.1:43123](http://127.0.0.1:43123) 打开。
+预览地址：[http://127.0.0.1:43123](http://127.0.0.1:43123)
 
-接口：`GET /api/fund-flow?period=3d`，`period` 可为 `1d` / `3d` / `5d` / `10d`。
+`preview` 使用生产模式启动，避免 Next.js 开发态对预览 iframe 的跨站拦截。日常开发也可用 `npm run dev`。
 
-## 说明
+## GitHub Pages
 
-- 盘中为东财实时估算，收盘后与数据中心口径一致。
-- 仅供浏览，不构成投资建议。
+仓库已包含 `.github/workflows/deploy-pages.yml`。把代码推到 `main` 后：
+
+1. 打开仓库 Settings → Pages
+2. Source 选 **GitHub Actions**
+3. 等待 Actions 跑完即可访问上面的在线地址
+
+本地检查静态构建：
+
+```bash
+npm run build:pages
+```
+
+产物在 `out/`。
