@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, RefreshCw, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ export function FundFlowDashboard({
     () => (initialData ? { [initialPeriod]: initialData } : {}),
   );
   const [error, setError] = useState<string | null>(initialError ?? null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!initialData && !initialError);
   const data = cache[period] ?? null;
 
   const load = useCallback(async (nextPeriod: Period) => {
@@ -76,6 +76,13 @@ export function FundFlowDashboard({
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (initialData || initialError) return;
+    // Initial client fetch so the document can render without waiting on East Money.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- bootstrap remote ranking
+    void load(initialPeriod);
+  }, [initialData, initialError, initialPeriod, load]);
 
   function selectPeriod(next: Period) {
     setPeriod(next);
