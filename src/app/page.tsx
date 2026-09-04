@@ -1,5 +1,5 @@
-import { FundFlowDashboard } from "@/components/fund-flow-dashboard";
+import { AppShell } from "@/components/app-shell";
 
 export default function Home() {
-  return <FundFlowDashboard initialPeriod="3d" initialData={null} />;
+  return <AppShell />;
 }

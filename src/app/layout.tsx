@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "A股近三日资金净流入前十",
+  title: "A股看板 · 换手量比选股与资金净流入",
   description:
-    "沪深 A 股主力资金净流入排行，默认展示最近三个交易日净流入最多的十只股票。数据来自东方财富。",
+    "沪深 A 股实时换手量比选股（换手 5%–10%、量比 2–3、排除 ST），以及近三日主力资金净流入前十。数据来自东方财富。",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
